@@ -18,17 +18,21 @@ def train_model():
 def ab_test():
     subprocess.run(["python", "/opt/airflow/scripts/ab_test.py"], check=True)
 
+def alerts():
+    subprocess.run(["python", "/opt/airflow/scripts/alerts.py"], check=True)
+
 with DAG(
     dag_id="generate_data",
     start_date=datetime(2025, 1, 1),
     schedule_interval=None,
     catchup=False,
-    tags=["data", "ml"],
+    tags=["data", "ml", "alerts"],
 ) as dag:
     task_generate = PythonOperator(task_id="generate_logs", python_callable=generate_logs)
     task_load = PythonOperator(task_id="load_to_clickhouse", python_callable=load_to_clickhouse)
     task_prepare = PythonOperator(task_id="prepare_features", python_callable=prepare_features)
     task_train = PythonOperator(task_id="train_model", python_callable=train_model)
     task_ab = PythonOperator(task_id="ab_test", python_callable=ab_test)
+    task_alerts = PythonOperator(task_id="alerts", python_callable=alerts)
 
-    task_generate >> task_load >> task_prepare >> task_train >> task_ab
+    task_generate >> task_load >> task_prepare >> task_train >> task_ab >> task_alerts
